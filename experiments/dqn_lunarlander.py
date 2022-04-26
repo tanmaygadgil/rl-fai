@@ -163,8 +163,8 @@ if __name__ == "__main__":
             episode_number.append(i)
             average_reward_number.append(average_reward/i)
 
-    plt.plot(episode_number, average_reward_number)
-    plt.show()
+    # plt.plot(episode_number, average_reward_number)
+    # plt.show()
 
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'dqn'
