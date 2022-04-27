@@ -155,7 +155,7 @@ def update_parameters(current_model, target_model):
 
 
 def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=64, update_repeats=50,
-         num_episodes=3000, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100, measure_step=100,
+         num_episodes=400, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100, measure_step=100,
          measure_repeats=100, hidden_dim=64, env_name='CartPole-v1', cnn=False, horizon=np.inf, render=False, render_step=50):
     """
     :param gamma: reward discount factor
