@@ -1,3 +1,6 @@
+import argparse
+import string
+
 import gym
 import torch
 import numpy as np
@@ -6,6 +9,12 @@ import random
 import torch.nn.functional as F
 import collections
 from torch.optim.lr_scheduler import StepLR
+from experiments.network_1 import Network as Network1
+from experiments.network_2 import Network as Network2
+import os
+import json
+import random, string
+import pandas as pd
 
 """
 Implementation of Double DQN for gym environments with discrete action space.
@@ -16,46 +25,46 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 """
 The Q-Network has as input a state s and outputs the state-action values q(s,a_1), ..., q(s,a_n) for all n actions.
 """
-class QNetwork(nn.Module):
-    def __init__(self, action_dim, state_dim, hidden_dim):
-        super(QNetwork, self).__init__()
-
-        self.fc_1 = nn.Linear(state_dim, hidden_dim)
-        self.fc_2 = nn.Linear(hidden_dim, hidden_dim)
-        self.fc_3 = nn.Linear(hidden_dim, action_dim)
-
-    def forward(self, inp):
-
-        x1 = F.leaky_relu(self.fc_1(inp))
-        x1 = F.leaky_relu(self.fc_2(x1))
-        x1 = self.fc_3(x1)
-
-        return x1
-
-
-"""
-If the observations are images we use CNNs.
-"""
-class QNetworkCNN(nn.Module):
-    def __init__(self, action_dim):
-        super(QNetworkCNN, self).__init__()
-
-        self.conv_1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
-        self.conv_2 = nn.Conv2d(32, 64, kernel_size=4, stride=3)
-        self.conv_3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc_1 = nn.Linear(8960, 512)
-        self.fc_2 = nn.Linear(512, action_dim)
-
-    def forward(self, inp):
-        inp = inp.view((1, 3, 210, 160))
-        x1 = F.relu(self.conv_1(inp))
-        x1 = F.relu(self.conv_2(x1))
-        x1 = F.relu(self.conv_3(x1))
-        x1 = torch.flatten(x1, 1)
-        x1 = F.leaky_relu(self.fc_1(x1))
-        x1 = self.fc_2(x1)
-
-        return x1
+# class QNetwork(nn.Module):
+#     def __init__(self, action_dim, state_dim, hidden_dim):
+#         super(QNetwork, self).__init__()
+#
+#         self.fc_1 = nn.Linear(state_dim, hidden_dim)
+#         self.fc_2 = nn.Linear(hidden_dim, hidden_dim)
+#         self.fc_3 = nn.Linear(hidden_dim, action_dim)
+#
+#     def forward(self, inp):
+#
+#         x1 = F.leaky_relu(self.fc_1(inp))
+#         x1 = F.leaky_relu(self.fc_2(x1))
+#         x1 = self.fc_3(x1)
+#
+#         return x1
+#
+#
+# """
+# If the observations are images we use CNNs.
+# """
+# class QNetworkCNN(nn.Module):
+#     def __init__(self, action_dim):
+#         super(QNetworkCNN, self).__init__()
+#
+#         self.conv_1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
+#         self.conv_2 = nn.Conv2d(32, 64, kernel_size=4, stride=3)
+#         self.conv_3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+#         self.fc_1 = nn.Linear(8960, 512)
+#         self.fc_2 = nn.Linear(512, action_dim)
+#
+#     def forward(self, inp):
+#         inp = inp.view((1, 3, 210, 160))
+#         x1 = F.relu(self.conv_1(inp))
+#         x1 = F.relu(self.conv_2(x1))
+#         x1 = F.relu(self.conv_3(x1))
+#         x1 = torch.flatten(x1, 1)
+#         x1 = F.leaky_relu(self.fc_1(x1))
+#         x1 = self.fc_2(x1)
+#
+#         return x1
 
 
 """
@@ -183,18 +192,58 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
     :param render_step: see above
     :return: the trained Q-Network and the measured performances
     """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--network", help="Select Network Number", default=1, type=int)
+    parser.add_argument("--lr", help="learning rate", default=0.0001, type=float)
+    parser.add_argument("--episodes", help="number of episodes", default=200, type=int)
+    parser.add_argument("--gamma", help="gamma", default=0.95, type=float)
+    args = parser.parse_args()
+    args_dict = vars(args)
+
+
     env = gym.make(env_name)
     torch.manual_seed(seed)
     env.seed(seed)
 
-    if cnn:
-        Q_1 = QNetworkCNN(action_dim=env.action_space.n).to(device)
-        Q_2 = QNetworkCNN(action_dim=env.action_space.n).to(device)
-    else:
-        Q_1 = QNetwork(action_dim=env.action_space.n, state_dim=env.observation_space.shape[0],
-                                        hidden_dim=hidden_dim).to(device)
-        Q_2 = QNetwork(action_dim=env.action_space.n, state_dim=env.observation_space.shape[0],
-                                        hidden_dim=hidden_dim).to(device)
+    num_episodes = args_dict['episodes']
+    lr = args_dict['lr']
+    lr_gamma = args_dict['gamma']
+
+    if args_dict['network'] == 11:
+        Q_1 = Network1(env.observation_space.shape,
+                        env.action_space, args_dict['lr'])
+        Q_2 = Network1(env.observation_space.shape,
+                      env.action_space, args_dict['lr'])
+    elif args_dict['network'] == 12:
+        Q_1 = Network1(env.observation_space.shape,
+                      env.action_space, args_dict['lr'])
+        Q_2 = Network2(env.observation_space.shape,
+                      env.action_space, args_dict['lr'])
+    elif args_dict['network'] == 21:
+        Q_1 = Network2(env.observation_space.shape,
+                      env.action_space, args_dict['lr'])
+        Q_2 = Network1(env.observation_space.shape,
+                      env.action_space, args_dict['lr'])
+    elif args_dict['network'] == 22:
+        Q_1 = Network2(env.observation_space.shape,
+                      env.action_space, args_dict['lr'])
+        Q_2 = Network2(env.observation_space.shape,
+                      env.action_space, args_dict['lr'])
+
+    print(Q_1)
+    print(Q_2)
+    print(args_dict)
+
+
+    # if cnn:
+    #     Q_1 = QNetworkCNN(action_dim=env.action_space.n).to(device)
+    #     Q_2 = QNetworkCNN(action_dim=env.action_space.n).to(device)
+    # else:
+    #     Q_1 = QNetwork(action_dim=env.action_space.n, state_dim=env.observation_space.shape[0],
+    #                                     hidden_dim=hidden_dim).to(device)
+    #     Q_2 = QNetwork(action_dim=env.action_space.n, state_dim=env.observation_space.shape[0],
+    #                                     hidden_dim=hidden_dim).to(device)
     # transfer parameters from Q_1 to Q_2
     update_parameters(Q_1, Q_2)
 
@@ -247,6 +296,21 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
         # update learning rate and eps
         scheduler.step()
         eps = max(eps*eps_decay, eps_min)
+
+    exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
+    args_dict['algorithm'] = 'ddqn'
+    args_dict['environment'] = 'cartpole'
+
+    os.makedirs(f"./results/experiment_{exp_name}", )
+    print(len(average_reward_number))
+    print(len(actual_rewards))
+    print(len(list(range(args_dict['episodes']))))
+    with open(f"./results/experiment_{exp_name}/config.json", 'w') as file:
+        json.dump(args_dict, file)
+
+    df = pd.DataFrame({"episodes": list(range(args_dict['episodes'])),
+                       "rewards": actual_rewards})
+    df.to_csv(f"./results/experiment_{exp_name}/rewards.csv", index=False)
 
     return Q_1, performance
 
