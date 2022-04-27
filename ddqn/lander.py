@@ -4,13 +4,14 @@ import string
 import gym
 import torch
 import numpy as np
+from matplotlib import pyplot as plt
 from torch import nn
 import random
 import torch.nn.functional as F
 import collections
 from torch.optim.lr_scheduler import StepLR
-from experiments.network_1 import Network as Network1
-from experiments.network_2 import Network as Network2
+from network_1 import Network as Network1
+from network_2 import Network as Network2
 import os
 import json
 import random, string
@@ -70,8 +71,6 @@ The Q-Network has as input a state s and outputs the state-action values q(s,a_1
 """
 memory to save the state, action, reward sequence from the current episode. 
 """
-
-
 class Memory:
     def __init__(self, len):
         self.rewards = collections.deque(maxlen=len)
@@ -93,10 +92,10 @@ class Memory:
         sample "batch_size" many (state, action, reward, next state, is_done) datapoints.
         """
         n = len(self.is_done)
-        idx = random.sample(range(0, n - 1), batch_size)
+        idx = random.sample(range(0, n-1), batch_size)
 
         return torch.Tensor(self.state)[idx].to(device), torch.LongTensor(self.action)[idx].to(device), \
-               torch.Tensor(self.state)[1 + np.array(idx)].to(device), torch.Tensor(self.rewards)[idx].to(device), \
+               torch.Tensor(self.state)[1+np.array(idx)].to(device), torch.Tensor(self.rewards)[idx].to(device), \
                torch.Tensor(self.is_done)[idx].to(device)
 
     def reset(self):
@@ -121,6 +120,7 @@ def select_action(model, env, state, eps):
 
 
 def train(batch_size, current, target, optim, memory, gamma):
+
     states, actions, next_states, rewards, is_done = memory.sample(batch_size)
 
     q_values = current(states)
@@ -157,18 +157,16 @@ def evaluate(Qmodel, env, repeats):
             state, reward, done, _ = env.step(action)
             perform += reward
     Qmodel.train()
-    return perform / repeats
+    return perform/repeats
 
 
 def update_parameters(current_model, target_model):
     target_model.load_state_dict(current_model.state_dict())
 
 
-def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=64,
-         update_repeats=50,
-         num_episodes=400, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100, measure_step=100,
-         measure_repeats=100, hidden_dim=64, env_name='LunarLander-v2', cnn=False, horizon=np.inf, render=False,
-         render_step=50):
+def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=64, update_repeats=50,
+         num_episodes=400, seed=42, max_memory_size=50000, lr_gamma=1, lr_step=100, measure_step=10,
+         measure_repeats=100, hidden_dim=64, env_name='LunarLander-v2', cnn=False, horizon=np.inf, render=False, render_step=50):
     """
     :param gamma: reward discount factor
     :param lr: learning rate for the Q-Network
@@ -197,45 +195,49 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--network", help="Select Network Number", default=1, type=int)
+    parser.add_argument("--network", help="Select Network Number", default=11, type=int)
     parser.add_argument("--lr", help="learning rate", default=0.0001, type=float)
     parser.add_argument("--episodes", help="number of episodes", default=200, type=int)
     parser.add_argument("--gamma", help="gamma", default=0.95, type=float)
     args = parser.parse_args()
     args_dict = vars(args)
 
+
     env = gym.make(env_name)
     torch.manual_seed(seed)
     env.seed(seed)
 
+    actual_rewards = []
+
     num_episodes = args_dict['episodes']
     lr = args_dict['lr']
-    lr_gamma = args_dict['gamma']
+    gamma = args_dict['gamma']
 
     if args_dict['network'] == 11:
-        Q_1 = Network1(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
-        Q_2 = Network1(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
+        Q_1 = Network1(env.observation_space.shape[0],
+                        env.action_space.n, args_dict['lr'])
+        Q_2 = Network1(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
     elif args_dict['network'] == 12:
-        Q_1 = Network1(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
+        Q_1 = Network1(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
         Q_2 = Network2(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
+                      env.action_space.n, args_dict['lr'])
     elif args_dict['network'] == 21:
-        Q_1 = Network2(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
-        Q_2 = Network1(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
+        Q_1 = Network2(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
+        Q_2 = Network1(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
     elif args_dict['network'] == 22:
-        Q_1 = Network2(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
-        Q_2 = Network2(env.observation_space.shape,
-                       env.action_space, args_dict['lr'])
+        Q_1 = Network2(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
+        Q_2 = Network2(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
 
     print(Q_1)
     print(Q_2)
     print(args_dict)
+
 
     # if cnn:
     #     Q_1 = QNetworkCNN(action_dim=env.action_space.n).to(device)
@@ -259,6 +261,8 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
     performance = []
 
     for episode in range(num_episodes):
+
+        score = 0
         # display the performance
         if episode % measure_step == 0:
             performance.append([episode, evaluate(Q_1, env, measure_repeats)])
@@ -272,6 +276,7 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
 
         done = False
         i = 0
+        steps = 0
         while not done:
             i += 1
             action = select_action(Q_2, env, state, eps)
@@ -283,9 +288,15 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
             # render the environment if render == True
             if render and episode % render_step == 0:
                 env.render()
-
+            if steps > 5000:
+                actual_rewards.append(score)
+                break
             # save state, action, reward sequence
             memory.update(state, action, reward, done)
+
+            score += reward
+            if done:
+                actual_rewards.append(score)
 
         if episode >= min_episodes and episode % update_step == 0:
             for _ in range(update_repeats):
@@ -296,14 +307,16 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
 
         # update learning rate and eps
         scheduler.step()
-        eps = max(eps * eps_decay, eps_min)
+        eps = max(eps*eps_decay, eps_min)
+
+    plt.plot(list(range(args_dict['episodes'])), actual_rewards)
+    plt.show()
 
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'ddqn'
     args_dict['environment'] = 'cartpole'
 
     os.makedirs(f"./results/experiment_{exp_name}", )
-    print(len(average_reward_number))
     print(len(actual_rewards))
     print(len(list(range(args_dict['episodes']))))
     with open(f"./results/experiment_{exp_name}/config.json", 'w') as file:
