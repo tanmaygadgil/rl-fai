@@ -171,8 +171,8 @@ if __name__ == '__main__':
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'ac'
     args_dict['environment'] = 'cartpole'
-    # plt.plot(list(range(args_dict['episodes'])), all_rewards)
-    # plt.show()
+    plt.plot(list(range(args_dict['episodes'])), all_rewards)
+    plt.show()
 
     os.makedirs(f"./results/experiment_{exp_name}",)
     with open(f"./results/experiment_{exp_name}/config.json", 'w') as file:

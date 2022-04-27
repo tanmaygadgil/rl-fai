@@ -75,6 +75,7 @@ def trainIters(actor, critic, n_iters, gamma, lr, save=False):
         masks = []
         entropy = 0
         env.reset()
+        score = 0
 
         for i in count():
 #             env.render()
@@ -86,7 +87,7 @@ def trainIters(actor, critic, n_iters, gamma, lr, save=False):
 
             log_prob = dist.log_prob(action).unsqueeze(0)
             entropy += dist.entropy().mean()
-
+            score += reward
             log_probs.append(log_prob)
             values.append(value)
             rewards.append(torch.tensor([reward], dtype=torch.float, device=device))
@@ -95,8 +96,11 @@ def trainIters(actor, critic, n_iters, gamma, lr, save=False):
             state = next_state
 
             if done:
-                # print('Iteration: {}, Score: {}'.format(iter, i))
-                all_rewards.append(i)
+                print('Iteration: {}, Score: {}'.format(iter, score))
+                all_rewards.append(score)
+                break
+            if i > 5000:
+                all_rewards.append(score)
                 break
 
 
@@ -165,14 +169,18 @@ if __name__ == '__main__':
         from network_2 import Network as Network
         actor = Network(env.observation_space.shape[0], action_size, is_actor=True).to(device)
         critic = Network(env.observation_space.shape[0], action_size).to(device)
+    elif args_dict['network'] == 33:
+        from network_3 import Network as Network
+        actor = Network(env.observation_space.shape[0], action_size, is_actor=True).to(device)
+        critic = Network(env.observation_space.shape[0], action_size).to(device)
 
 
     all_rewards = trainIters(actor, critic, n_iters=args_dict['episodes'],  lr=args_dict['lr'], gamma=args_dict['gamma'], save=False)
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'ac'
     args_dict['environment'] = 'cartpole'
-    # plt.plot(list(range(args_dict['episodes'])), all_rewards)
-    # plt.show()
+    plt.plot(list(range(args_dict['episodes'])), all_rewards)
+    plt.show()
 
     os.makedirs(f"./results/experiment_{exp_name}",)
     with open(f"./results/experiment_{exp_name}/config.json", 'w') as file:

@@ -8,12 +8,13 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-from torchsummary import summary
+# from torchsummary import summary
 import sys
 import os
 import json
 import random, string
 import pandas as pd
+from datetime import datetime
 
 
 env = gym.make('LunarLander-v2')
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", help="gamma", default=0.95, type=float)
     args = parser.parse_args()
     args_dict = vars(args)
-
+    start=datetime.now()
     if args_dict['network'] == 1:
         from network_1 import Network as Network
         network = Network(env.observation_space.shape, 
@@ -140,7 +141,7 @@ if __name__ == "__main__":
         state = env.reset()
         state = np.reshape(state, [1, observation_space])
         score = 0
-
+        step_counter = 0
         while True:
             #env.render()
             action = agent.get_action(state)
@@ -152,6 +153,9 @@ if __name__ == "__main__":
             state = state_
             score += reward
 
+            if step_counter > 5000:
+                actual_rewards.append(score)
+                break
             if done:
                 if score > best_reward:
                     best_reward = score
@@ -159,17 +163,17 @@ if __name__ == "__main__":
                 average_reward += score 
                 print("Episode {} Average Reward {} Best Reward {} Last Reward {} Epsilon {}".format(i, average_reward/i, best_reward, score, agent.returning_epsilon()))
                 break
-                
+            step_counter += 1    
             episode_number.append(i)
             average_reward_number.append(average_reward/i)
 
     # plt.plot(episode_number, average_reward_number)
     # plt.show()
-
+    
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'dqn'
     args_dict['environment'] = 'lunarlander-discrete'
-
+    
     os.makedirs(f"./results/experiment_{exp_name}",)
     print(len(average_reward_number))
     print(len(actual_rewards))
@@ -180,6 +184,8 @@ if __name__ == "__main__":
     df = pd.DataFrame({"episodes": list(range(args_dict['episodes'])), 
                        "rewards": actual_rewards})
     df.to_csv(f"./results/experiment_{exp_name}/rewards.csv", index=False)
+
+    print(f"time taken: {datetime.now() -  start}")
     
     
 
