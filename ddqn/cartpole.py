@@ -4,13 +4,14 @@ import string
 import gym
 import torch
 import numpy as np
+from matplotlib import pyplot as plt
 from torch import nn
 import random
 import torch.nn.functional as F
 import collections
 from torch.optim.lr_scheduler import StepLR
-from experiments.network_1 import Network as Network1
-from experiments.network_2 import Network as Network2
+from dqn_experiments.network_1 import Network as Network1
+from dqn_experiments.network_2 import Network as Network2
 import os
 import json
 import random, string
@@ -206,6 +207,8 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
     torch.manual_seed(seed)
     env.seed(seed)
 
+    actual_rewards = []
+
     num_episodes = args_dict['episodes']
     lr = args_dict['lr']
     lr_gamma = args_dict['gamma']
@@ -258,6 +261,8 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
     performance = []
 
     for episode in range(num_episodes):
+
+        score = 0
         # display the performance
         if episode % measure_step == 0:
             performance.append([episode, evaluate(Q_1, env, measure_repeats)])
@@ -286,6 +291,10 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
             # save state, action, reward sequence
             memory.update(state, action, reward, done)
 
+            score += reward
+            if done:
+                actual_rewards.append(score)
+
         if episode >= min_episodes and episode % update_step == 0:
             for _ in range(update_repeats):
                 train(batch_size, Q_1, Q_2, optimizer, memory, gamma)
@@ -297,12 +306,14 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
         scheduler.step()
         eps = max(eps*eps_decay, eps_min)
 
+    plt.plot(list(range(args_dict['episodes'])), actual_rewards)
+    plt.show()
+
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'ddqn'
     args_dict['environment'] = 'cartpole'
 
     os.makedirs(f"./results/experiment_{exp_name}", )
-    print(len(average_reward_number))
     print(len(actual_rewards))
     print(len(list(range(args_dict['episodes']))))
     with open(f"./results/experiment_{exp_name}/config.json", 'w') as file:
