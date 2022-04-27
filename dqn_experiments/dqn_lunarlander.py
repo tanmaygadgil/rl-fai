@@ -16,7 +16,7 @@ import random, string
 import pandas as pd
 
 
-env = gym.make('CartPole-v1')
+env = gym.make('LunarLander-v2')
 observation_space = env.observation_space.shape[0]
 action_space = env.action_space.n
 
