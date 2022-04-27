@@ -11,7 +11,7 @@ import pandas as pd
 import argparse
 import random, string
 import matplotlib.pyplot as plt
-
+from datetime import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 env = gym.make("LunarLander-v2").unwrapped
@@ -141,6 +141,7 @@ if __name__ == '__main__':
     #     print('Critic Model loaded')
     # else:
     #     critic = Critic(state_size, action_size).to(device)
+    start=datetime.now()
     parser = argparse.ArgumentParser()
     parser.add_argument("--network", help = "Select Network Number", default=11, type=int)
     parser.add_argument("--lr", help="learning rate", default=0.0001, type=float)
@@ -178,9 +179,9 @@ if __name__ == '__main__':
     all_rewards = trainIters(actor, critic, n_iters=args_dict['episodes'],  lr=args_dict['lr'], gamma=args_dict['gamma'], save=False)
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'ac'
-    args_dict['environment'] = 'cartpole'
-    plt.plot(list(range(args_dict['episodes'])), all_rewards)
-    plt.show()
+    args_dict['environment'] = 'lunarlander'
+    # plt.plot(list(range(args_dict['episodes'])), all_rewards)
+    # plt.show()
 
     os.makedirs(f"./results/experiment_{exp_name}",)
     with open(f"./results/experiment_{exp_name}/config.json", 'w') as file:
@@ -189,3 +190,4 @@ if __name__ == '__main__':
     df = pd.DataFrame({"episodes": list(range(args_dict['episodes'])), 
                        "rewards": all_rewards})
     df.to_csv(f"./results/experiment_{exp_name}/rewards.csv", index=False)
+    print(f"time taken: {datetime.now() -  start}")
