@@ -96,7 +96,7 @@ def trainIters(actor, critic, n_iters, gamma, lr, save=False):
             state = next_state
 
             if done:
-                print('Iteration: {}, Score: {}'.format(iter, score))
+                # print('Iteration: {}, Score: {}'.format(iter, score))
                 all_rewards.append(score)
                 break
             if i > 5000:
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     all_rewards = trainIters(actor, critic, n_iters=args_dict['episodes'],  lr=args_dict['lr'], gamma=args_dict['gamma'], save=False)
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'ac'
-    args_dict['environment'] = 'cartpole'
+    args_dict['environment'] = 'lunarlander'
     plt.plot(list(range(args_dict['episodes'])), all_rewards)
     plt.show()
 
