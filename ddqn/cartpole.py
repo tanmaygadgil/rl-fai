@@ -10,8 +10,8 @@ import random
 import torch.nn.functional as F
 import collections
 from torch.optim.lr_scheduler import StepLR
-from dqn_experiments.network_1 import Network as Network1
-from dqn_experiments.network_2 import Network as Network2
+from network_1 import Network as Network1
+from network_2 import Network as Network2
 import os
 import json
 import random, string
@@ -165,7 +165,7 @@ def update_parameters(current_model, target_model):
 
 
 def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=64, update_repeats=50,
-         num_episodes=400, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100, measure_step=100,
+         num_episodes=400, seed=42, max_memory_size=50000, lr_gamma=1, lr_step=100, measure_step=100,
          measure_repeats=100, hidden_dim=64, env_name='CartPole-v1', cnn=False, horizon=np.inf, render=False, render_step=50):
     """
     :param gamma: reward discount factor
@@ -195,7 +195,7 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--network", help="Select Network Number", default=1, type=int)
+    parser.add_argument("--network", help="Select Network Number", default=11, type=int)
     parser.add_argument("--lr", help="learning rate", default=0.0001, type=float)
     parser.add_argument("--episodes", help="number of episodes", default=200, type=int)
     parser.add_argument("--gamma", help="gamma", default=0.95, type=float)
@@ -211,28 +211,28 @@ def main(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0
 
     num_episodes = args_dict['episodes']
     lr = args_dict['lr']
-    lr_gamma = args_dict['gamma']
+    gamma = args_dict['gamma']
 
     if args_dict['network'] == 11:
-        Q_1 = Network1(env.observation_space.shape,
-                        env.action_space, args_dict['lr'])
-        Q_2 = Network1(env.observation_space.shape,
-                      env.action_space, args_dict['lr'])
+        Q_1 = Network1(env.observation_space.shape[0],
+                        env.action_space.n, args_dict['lr'])
+        Q_2 = Network1(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
     elif args_dict['network'] == 12:
-        Q_1 = Network1(env.observation_space.shape,
-                      env.action_space, args_dict['lr'])
+        Q_1 = Network1(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
         Q_2 = Network2(env.observation_space.shape,
-                      env.action_space, args_dict['lr'])
+                      env.action_space.n, args_dict['lr'])
     elif args_dict['network'] == 21:
-        Q_1 = Network2(env.observation_space.shape,
-                      env.action_space, args_dict['lr'])
-        Q_2 = Network1(env.observation_space.shape,
-                      env.action_space, args_dict['lr'])
+        Q_1 = Network2(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
+        Q_2 = Network1(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
     elif args_dict['network'] == 22:
-        Q_1 = Network2(env.observation_space.shape,
-                      env.action_space, args_dict['lr'])
-        Q_2 = Network2(env.observation_space.shape,
-                      env.action_space, args_dict['lr'])
+        Q_1 = Network2(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
+        Q_2 = Network2(env.observation_space.shape[0],
+                      env.action_space.n, args_dict['lr'])
 
     print(Q_1)
     print(Q_2)
