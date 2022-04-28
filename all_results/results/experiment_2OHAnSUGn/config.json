@@ -1,0 +1,1 @@
+{"network": 11, "lr": 0.01, "episodes": 800, "gamma": 0.8, "algorithm": "ac", "environment": "lunarlander"}
