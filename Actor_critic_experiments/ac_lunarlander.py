@@ -96,7 +96,7 @@ def trainIters(actor, critic, n_iters, gamma, lr, save=False):
             state = next_state
 
             if done:
-                print('Iteration: {}, Score: {}'.format(iter, score))
+                # print('Iteration: {}, Score: {}'.format(iter, score))
                 all_rewards.append(score)
                 break
             if i > 5000:
@@ -180,8 +180,13 @@ if __name__ == '__main__':
     exp_name = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(9))
     args_dict['algorithm'] = 'ac'
     args_dict['environment'] = 'lunarlander'
+<<<<<<< HEAD
+    plt.plot(list(range(args_dict['episodes'])), all_rewards)
+    plt.show()
+=======
     # plt.plot(list(range(args_dict['episodes'])), all_rewards)
     # plt.show()
+>>>>>>> 47ca8a3141eca6124f6655a50c511d9b3159f82b
 
     os.makedirs(f"./results/experiment_{exp_name}",)
     with open(f"./results/experiment_{exp_name}/config.json", 'w') as file:
@@ -190,4 +195,7 @@ if __name__ == '__main__':
     df = pd.DataFrame({"episodes": list(range(args_dict['episodes'])), 
                        "rewards": all_rewards})
     df.to_csv(f"./results/experiment_{exp_name}/rewards.csv", index=False)
+<<<<<<< HEAD
+=======
     print(f"time taken: {datetime.now() -  start}")
+>>>>>>> 47ca8a3141eca6124f6655a50c511d9b3159f82b
