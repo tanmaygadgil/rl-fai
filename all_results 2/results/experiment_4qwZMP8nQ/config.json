@@ -1,0 +1,1 @@
+{"network": 11, "lr": 0.001, "episodes": 1000, "gamma": 0.99, "algorithm": "ac", "environment": "cartpole"}
